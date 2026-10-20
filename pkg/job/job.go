@@ -90,3 +90,18 @@ func IsStatusConditionTrue(conditions []batchv1.JobCondition, conditionType batc
 	}
 	return false
 }
+
+// LatestFinishedJob returns the most recently created Job that has either completed or failed, or nil if there is none.
+func LatestFinishedJob(jobList *batchv1.JobList) *batchv1.Job {
+	var latest *batchv1.Job
+	for i := range jobList.Items {
+		job := &jobList.Items[i]
+		if !IsJobComplete(job) && !IsJobFailed(job) {
+			continue
+		}
+		if latest == nil || job.CreationTimestamp.After(latest.CreationTimestamp.Time) {
+			latest = job
+		}
+	}
+	return latest
+}
