@@ -314,6 +314,10 @@ func (r *MariaDBReconciler) cleanupPhysicalBackup(ctx context.Context, key types
 		}
 		return err
 	}
+	// Delete the PhysicalBackup first so its controller cannot recreate the storage PVC afterwards.
+	if err := r.Delete(ctx, &physicalBackup); err != nil && !apierrors.IsNotFound(err) {
+		return err
+	}
 	// The storage PVC has no owner reference, so it must be deleted explicitly to avoid leaking it.
 	if physicalBackup.Spec.Storage.PersistentVolumeClaim != nil {
 		pvcKey := physicalBackup.StoragePVCKey()
@@ -324,5 +328,5 @@ func (r *MariaDBReconciler) cleanupPhysicalBackup(ctx context.Context, key types
 			return fmt.Errorf("error deleting PhysicalBackup storage PVC: %v", err)
 		}
 	}
-	return r.Delete(ctx, &physicalBackup)
+	return nil
 }
